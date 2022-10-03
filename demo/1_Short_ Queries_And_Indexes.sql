@@ -1,5 +1,28 @@
 SET SEARCH_PATH TO postgres_air;
 
+-- Drop indexes created below for a fresh start
+DROP INDEX IF EXISTS flight_departure_airport;
+DROP INDEX IF EXISTS flight_scheduled_departure;
+DROP INDEX IF EXISTS flight_update_ts;
+DROP INDEX IF EXISTS booking_leg_booking_id;
+DROP INDEX IF EXISTS booking_leg_update_ts;
+DROP INDEX IF EXISTS account_last_name;
+DROP INDEX IF EXISTS account_last_name_lower;
+DROP INDEX IF EXISTS account_last_name_lower_pattern;
+DROP INDEX IF EXISTS flight_depart_arr_sched_dep;
+DROP INDEX IF EXISTS flight_depart_arr_sched_dep_inc_sched_arr;
+DROP INDEX IF EXISTS flight_canceled;
+DROP INDEX IF EXISTS account_login;
+DROP INDEX IF EXISTS account_login_lower_pattern;
+DROP INDEX IF EXISTS passenger_last_name;
+DROP INDEX IF EXISTS boarding_pass_passenger_id;
+DROP INDEX IF EXISTS passenger_last_name_lower_pattern;
+DROP INDEX IF EXISTS passenger_booking_id;
+DROP INDEX IF EXISTS booking_account_id;
+DROP INDEX IF EXISTS frequent_fl_last_name_lower_pattern;
+
+
+-- Prepare initial set of indexes
 CREATE INDEX IF NOT EXISTS flight_departure_airport ON flight(departure_airport);
 CREATE INDEX IF NOT EXISTS flight_scheduled_departure ON flight(scheduled_departure);
 CREATE INDEX IF NOT EXISTS flight_update_ts ON flight(update_ts);
@@ -168,7 +191,7 @@ WHERE departure_airport = 'JFK'
 
 
 
--------------- Using multiple & compound indexes
+-------------- Using covering indexes
 DROP INDEX IF EXISTS flight_depart_arr_sched_dep_inc_sched_arr;
 CREATE INDEX flight_depart_arr_sched_dep_inc_sched_arr
     ON flight
