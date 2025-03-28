@@ -6,5 +6,5 @@
 2. run `docker-compose up`
 3. Restore the data
 ```bash
-docker exec -i postgresql-query-optimization_db_1 pg_restore -U postgres -v -d postgres < /Users/sasha/Downloads/postgres_air.backup
+docker exec -i postgresql-query-optimization-db-1 pg_restore -U postgres -v -d postgres < /Users/sshynkariuk/Downloads/postgres_air.backup
 ```
