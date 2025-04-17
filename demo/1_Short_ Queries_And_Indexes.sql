@@ -30,6 +30,24 @@ CREATE INDEX IF NOT EXISTS booking_leg_booking_id ON booking_leg(booking_leg_id)
 CREATE INDEX IF NOT EXISTS booking_leg_update_ts ON booking_leg(update_ts);
 CREATE INDEX IF NOT EXISTS account_last_name ON account(last_name);
 
+-- check indexes in all tables
+SELECT tablename,
+       indexname,
+       indexdef
+FROM pg_indexes
+WHERE schemaname = 'postgres_air'
+ORDER BY tablename,
+         indexname;
+-- show index sizes:
+SELECT i.relname "Table Name",indexrelname "Index Name",
+       pg_size_pretty(pg_total_relation_size(relid)) As "Total Size",
+       pg_size_pretty(pg_indexes_size(relid)) as "Total Size of all Indexes",
+       pg_size_pretty(pg_relation_size(relid)) as "Table Size",
+       pg_size_pretty(pg_relation_size(indexrelid)) "Index Size",
+       reltuples::bigint "Estimated table row count"
+FROM pg_stat_all_indexes i JOIN pg_class c ON i.relid=c.oid
+WHERE i.relname='flight';
+
 -------------- Execution plan
 -- There are 141 of airports in US
 SELECT count(1) from airport where iso_country = 'US';
@@ -45,6 +63,9 @@ EXPLAIN
 SELECT flight_id, scheduled_departure
 FROM flight f
          JOIN airport a on f.departure_airport = a.airport_code AND iso_country = 'NL';
+-- most of the flights in a table are from US airports:
+SELECT * FROM pg_stats WHERE tablename = 'flight' and attname = 'departure_airport';
+
 
 -------------- Data Access Algorithms
 -- Wide range filtering query -> optimiser selects full table scan:
@@ -68,12 +89,12 @@ CREATE INDEX IF NOT EXISTS boarding_pass_booking_leg_id ON postgres_air.boarding
 
 -- Short vs. long queries: length of SQL does not matter
 -- Long query example. Needs all records from a table to compute the result
-SELECT d.airport_code AS departuer_airport, a.airport_code AS arrival_airport
+EXPLAIN SELECT d.airport_code AS departuer_airport, a.airport_code AS arrival_airport
 FROM airport a,
      airport d;
 
 -- Short Query example. Needs to find a few specific entries, but across many tables and with specific conditions
-SELECT f.flight_no,
+EXPLAIN SELECT f.flight_no,
        f.scheduled_departure,
        boarding_time,
        p.last_name,
@@ -122,7 +143,7 @@ WHERE lower(last_name) = 'daniels';
 EXPLAIN
 SELECT *
 FROM flight
-WHERE scheduled_departure ::date BETWEEN '2020-08-17' AND '2020-08-18';
+WHERE scheduled_departure::date BETWEEN '2020-08-17' AND '2020-08-18';
 -- no need to convert timestamp to date:
 EXPLAIN
 SELECT *
@@ -214,6 +235,8 @@ WHERE departure_airport = 'JFK'
 -- possible `status` values: ‘On schedule’, ‘Delayed’, and ‘Canceled’.
 -- There are much more flights with a status 'On Schedule', creating an index on it will not be efficient due to high selectivity
 -- But it makes sense to create an index on 'Canceled' column and benefit from low selectivity:
+SELECT * FROM pg_stats WHERE tablename = 'flight' and attname = 'status';
+
 DROP INDEX IF EXISTS flight_canceled;
 CREATE INDEX IF NOT EXISTS flight_canceled ON flight(flight_id)
     WHERE status='Canceled';
@@ -277,45 +300,3 @@ FROM frequent_flyer f
 WHERE lower(f.last_name) = 'smith'
   AND lower(login) LIKE 'smith%'
 GROUP BY 1, 2, 3, 4;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
